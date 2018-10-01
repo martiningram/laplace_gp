@@ -24,9 +24,18 @@ def ard_rbf_kernel(x1, x2, lengthscales, alpha, jitter=1e-5):
 
     # Use broadcasting to do a dot product
     exponent = np.sum(sq_differences * inv_sq_lengthscales, axis=2)
+    exponentiated = np.exp(-0.5 * exponent)
 
-    kern = alpha**2 * np.exp(-0.5 * exponent)
-
+    kern = alpha**2 * exponentiated
     kern[np.diag_indices_from(kern)] = np.diag(kern) + jitter
 
-    return kern
+    # Find gradients
+    # Gradient with respect to alpha:
+    alpha_grad = 2 * alpha * exponentiated
+
+    # Gradient with respect to lengthscales
+    # Square differences should be [N x N x D]
+    lengthscale_grads = (alpha**2 * np.expand_dims(exponentiated, axis=2) *
+                         sq_differences / (lengthscales**3))
+
+    return kern, lengthscale_grads, alpha_grad
