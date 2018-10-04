@@ -34,7 +34,7 @@ def ard_rbf_kernel(x1, x2, lengthscales, alpha, jitter=1e-5):
     alpha_grad = 2 * alpha * exponentiated
 
     # Gradient with respect to lengthscales
-    # Square differences should be [N x N x D]
+    # Square differences should be [N1 x N2 x D]
     lengthscale_grads = (alpha**2 * np.expand_dims(exponentiated, axis=2) *
                          sq_differences / (lengthscales**3))
 
