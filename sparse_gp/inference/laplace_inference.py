@@ -104,6 +104,9 @@ class LaplaceInference(Inference):
 
     def fit(self, x, y):
 
+        # TODO: Profile this. What's slow, what's fast? Can I improve some
+        # stuff?
+
         # Get the kernel hyperparameters (initial values)
         hyperparams = self.kernel.get_flat_hyperparameters()
         to_minimise = lambda h: [
