@@ -3,9 +3,9 @@ from abc import ABC, abstractmethod
 
 class Likelihood(ABC):
 
-    def __init__(self, is_diagonal):
+    def __init__(self, hessian_is_diagonal):
 
-        self.is_diagonal = is_diagonal
+        self.hessian_is_diagonal = hessian_is_diagonal
 
     @abstractmethod
     def log_likelihood(self, y, f):
@@ -45,3 +45,7 @@ class Likelihood(ABC):
             csc_matrix: A sparse matrix of second derivatives.
         """
         pass
+
+    def log_likelihood_third_deriv(self, y, f):
+        # TODO: Is this the right way to handle this?
+        raise Exception('Third derivative not implemented!')

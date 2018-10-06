@@ -18,7 +18,7 @@ class Kernel(ABC):
             X2 (np.array): An [N2 x D] matrix.
 
         Returns:
-            np.array: An [N1 x N2] kernel matrix.
+            csc_matrix: An [N1 x N2] kernel matrix [sparse].
         """
         pass
 
@@ -39,8 +39,8 @@ class Kernel(ABC):
 
     @abstractmethod
     def get_flat_gradients(self, X1, X2):
-        """Same as `gradients`, but must return the gradients as a single
-        Matrix."""
+        """Same as `gradients`, but returns the gradients as a list of sparse
+        matrices in csc format."""
         pass
 
     @abstractmethod

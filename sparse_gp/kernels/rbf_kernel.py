@@ -1,5 +1,6 @@
 import numpy as np
 from sparse_gp.kernels.kernel import Kernel
+import scipy.sparse as sps
 
 
 class RBFKernel(Kernel):
@@ -24,9 +25,13 @@ class RBFKernel(Kernel):
 
         super(RBFKernel, self).__init__(input_dims=input_dims)
 
-    def compute_exponent(self, X1, X2):
+    def compute_sq_differences(self, X1, X2):
+
         # x1 is N1 x D
         # x2 is N2 x D (and N1 can be equal to N2)
+
+        X1 = X1[:, self.input_dims]
+        X2 = X2[:, self.input_dims]
 
         # Must have same number of dimensions
         assert(X1.shape[1] == X2.shape[1])
@@ -42,6 +47,13 @@ class RBFKernel(Kernel):
 
         # These will be N1 x N2 x D
         sq_differences = (x1_expanded - x2_expanded)**2
+
+        return sq_differences
+
+    def compute_exponent(self, X1, X2):
+
+        sq_differences = self.compute_sq_differences(X1, X2)
+
         inv_sq_lengthscales = 1. / self.lengthscales**2
 
         # Use broadcasting to do a dot product
@@ -57,9 +69,14 @@ class RBFKernel(Kernel):
         kern = self.stdev**2 * exponentiated
         kern[np.diag_indices_from(kern)] = np.diag(kern) + self.jitter
 
-        return kern
+        return sps.csc_matrix(kern)
 
     def gradients(self, X1, X2):
+
+        # FIXME: This wastes some computation, since compute_exponent also
+        # calculates the square differences. Could fix.
+        sq_differences = self.compute_sq_differences(X1, X2)
+        exponentiated = self.compute_exponent(X1, X2)
 
         # Find gradients
         # Gradient with respect to stdev:
@@ -79,7 +96,7 @@ class RBFKernel(Kernel):
             'lengthscales': lengthscale_grads
         }
 
-    def get_flat_gradient(self, X1, X2):
+    def get_flat_gradients(self, X1, X2):
 
         # Compute the gradients as normal
         gradients = self.gradients(X1, X2)
@@ -88,7 +105,8 @@ class RBFKernel(Kernel):
         flat_grads = np.concatenate([gradients['lengthscales'],
                                      gradients['stdev']], axis=2)
 
-        return flat_grads
+        return [sps.csc_matrix(flat_grads[:, :, i]) for i in
+                range(flat_grads.shape[2])]
 
     def get_flat_hyperparameters(self):
 
