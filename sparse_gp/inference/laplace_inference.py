@@ -115,10 +115,26 @@ class LaplaceInference(Inference):
 
     def predict(self, x_star):
 
-        # TODO: Finish this off!
+        means, vars = list(), list()
 
-        # Compute mean
-        # Compute variance
-        kern_result = self.kernel.compute(x_star, x_star)
-        v = self.solve_L(self.W_sqrt.dot(kern_result), False)
-        var = kern_result - v.dot(v.T)
+        for i in range(x_star.shape[0]):
+
+            cur_x_star = x_star[[i], :]
+
+            k_x_star = self.kernel.compute(self.x, cur_x_star)
+            k_star_star = self.kernel.compute(cur_x_star, cur_x_star)
+
+            # Compute mean
+            mean = np.squeeze(k_x_star.transpose().dot(self.grad_log_y))
+
+            # Compute variance
+            v = self.L.solve_L(self.W_sqrt.dot(k_x_star), False)
+            var = k_star_star - v.T.dot(v)
+
+            # Turn this dense matrix into a scalar
+            var = np.squeeze(np.asarray(var.todense()))
+
+            means.append(mean)
+            vars.append(var)
+
+        return np.array(means), np.array(vars)

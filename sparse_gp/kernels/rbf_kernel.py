@@ -67,7 +67,8 @@ class RBFKernel(Kernel):
         exponentiated = self.compute_exponent(X1, X2)
 
         kern = self.stdev**2 * exponentiated
-        kern[np.diag_indices_from(kern)] = np.diag(kern) + self.jitter
+        diag_indices = np.diag_indices(np.min(kern.shape[:2]))
+        kern[diag_indices] = kern[diag_indices] + self.jitter
 
         return sps.csc_matrix(kern)
 
