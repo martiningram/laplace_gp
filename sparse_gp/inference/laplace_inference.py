@@ -108,7 +108,7 @@ class LaplaceInference(Inference):
         self.f_hat = f
         self.L = quantities['L']
         self.W_sqrt = quantities['W_sqrt']
-        self.grad_y = quantities['grad_y']
+        self.grad_log_y = quantities['grad_log_y']
         self.x = x
 
         return result
