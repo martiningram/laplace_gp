@@ -85,7 +85,7 @@ class LaplaceInference(Inference):
         C = s['L'].solve_L(s['W_sqrt'].dot(kern), False)
 
         diag_diff = sps.csc_matrix(np.diag(
-            kern.diagonal() - C.transpose().dot(C).diagonal()))
+            kern.diagonal() - np.asarray(C.power(2).sum(axis=0)).reshape(-1)))
 
         s2 = -0.5 * diag_diff.dot(third_grad)
 
@@ -93,9 +93,10 @@ class LaplaceInference(Inference):
 
         for C in hyper_grads:
 
-            # TODO: I think the trace can be computed more efficiently here.
             inter = 0.5 * s['a'].dot(C.dot(s['a']))
-            s1 = inter - 0.5 * np.sum(Z.dot(C).diagonal())
+
+            # Calculate the trace using the hadamard product
+            s1 = inter - 0.5 * np.sum(Z.multiply(C))
 
             b = C.dot(s['grad_log_y'])
             s3 = b - kern.dot((Z.dot(b)))

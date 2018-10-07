@@ -50,9 +50,7 @@ class RBFKernel(Kernel):
 
         return sq_differences
 
-    def compute_exponent(self, X1, X2):
-
-        sq_differences = self.compute_sq_differences(X1, X2)
+    def compute_exponent(self, sq_differences):
 
         inv_sq_lengthscales = 1. / self.lengthscales**2
 
@@ -64,7 +62,8 @@ class RBFKernel(Kernel):
 
     def compute(self, X1, X2):
 
-        exponentiated = self.compute_exponent(X1, X2)
+        sq_differences = self.compute_sq_differences(X1, X2)
+        exponentiated = self.compute_exponent(sq_differences)
 
         kern = self.stdev**2 * exponentiated
         diag_indices = np.diag_indices(np.min(kern.shape[:2]))
@@ -74,10 +73,8 @@ class RBFKernel(Kernel):
 
     def gradients(self, X1, X2):
 
-        # FIXME: This wastes some computation, since compute_exponent also
-        # calculates the square differences. Could fix.
         sq_differences = self.compute_sq_differences(X1, X2)
-        exponentiated = self.compute_exponent(X1, X2)
+        exponentiated = self.compute_exponent(sq_differences)
 
         # Find gradients
         # Gradient with respect to stdev:
