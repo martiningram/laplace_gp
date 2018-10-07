@@ -7,7 +7,7 @@ from sparse_gp.inference.inference import Inference
 
 class LaplaceInference(Inference):
 
-    def __init__(self, kernel, likelihood, restart_at_same_f=True):
+    def __init__(self, kernel, likelihood, restart_at_same_f=False):
 
         # Currently, support only diagonal hessians.
         assert(likelihood.hessian_is_diagonal)
