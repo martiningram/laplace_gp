@@ -7,13 +7,15 @@ from sparse_gp.inference.inference import Inference
 
 class LaplaceInference(Inference):
 
-    def __init__(self, kernel, likelihood, restart_at_same_f=False):
+    def __init__(self, kernel, likelihood, restart_at_same_f=False,
+                 verbose=False):
 
         # Currently, support only diagonal hessians.
         assert(likelihood.hessian_is_diagonal)
 
         self.f_hat = None
         self.restart_at_same_f = restart_at_same_f
+        self.verbose = verbose
 
         super(LaplaceInference, self).__init__(
             kernel=kernel, likelihood=likelihood)
@@ -99,7 +101,12 @@ class LaplaceInference(Inference):
             s3 = b - kern.dot((Z.dot(b)))
             grads.append(s1 + s2.T.dot(s3))
 
-        print(log_marg_lik)
+        if self.verbose:
+
+            print('Log marginal likelihood: {:.2f}'.format(log_marg_lik))
+            print('Gradient square norm: {:.2f}'.format(
+                np.linalg.norm(np.array(grads))))
+
         return log_marg_lik, np.array(grads), f
 
     def fit(self, x, y):

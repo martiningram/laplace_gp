@@ -127,3 +127,8 @@ class RBFKernel(Kernel):
 
         self.lengthscales = lengthscales
         self.stdev = stdev
+
+    def __str__(self):
+
+        return ('RBF Kernel with lengthscales {} and stdev {:.2f}.'.format(
+            np.array2string(self.lengthscales, precision=2), self.stdev))
