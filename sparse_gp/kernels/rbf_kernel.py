@@ -94,7 +94,7 @@ class RBFKernel(Kernel):
             'lengthscales': lengthscale_grads
         }
 
-    def get_flat_gradients(self, X1, X2):
+    def get_flat_gradients(self, X1, X2, sparse=False):
 
         # Compute the gradients as normal
         gradients = self.gradients(X1, X2)
@@ -103,8 +103,11 @@ class RBFKernel(Kernel):
         flat_grads = np.concatenate([gradients['lengthscales'],
                                      gradients['stdev']], axis=2)
 
-        return [sps.csc_matrix(flat_grads[:, :, i]) for i in
-                range(flat_grads.shape[2])]
+        if sparse:
+            return [sps.csc_matrix(flat_grads[:, :, i]) for i in
+                    range(flat_grads.shape[2])]
+        else:
+            return [flat_grads[:, :, i] for i in range(flat_grads.shape[2])]
 
     def get_flat_hyperparameters(self):
 

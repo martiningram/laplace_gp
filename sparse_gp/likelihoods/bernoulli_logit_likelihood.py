@@ -27,7 +27,7 @@ class BernoulliLogitLikelihood(Likelihood):
     def log_likelihood_hessian(self, y, f):
 
         probs = expit(f)
-        hess = sps.csc_matrix(np.diag(probs * (probs - 1)))
+        hess = sps.diags(probs * (probs - 1), format='csc')
         return hess
 
     def log_likelihood_third_deriv(self, y, f):

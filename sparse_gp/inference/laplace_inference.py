@@ -22,6 +22,7 @@ class LaplaceInference(Inference):
             kernel=kernel, likelihood=likelihood)
 
     @staticmethod
+    @profile
     def find_mode(K, likelihood, y, f_init=None, maxiter=100,
                   verbose=False):
 
@@ -36,9 +37,12 @@ class LaplaceInference(Inference):
 
         while np.sum((f - old_f)**2) > 1e-8 and iters < maxiter:
 
+            if verbose:
+                print('Mode-finding iteration {}.'.format(iters))
+
             grad_log_y = likelihood.log_likelihood_grad(y, f)
             W = -likelihood.log_likelihood_hessian(y, f)
-            W_sqrt = np.sqrt(W)
+            W_sqrt = W.sqrt()
             multiplied = W_sqrt.dot(K).dot(W_sqrt)
 
             B = multiplied + sps.eye(K.shape[0], format='csc')
@@ -74,6 +78,7 @@ class LaplaceInference(Inference):
 
         return f, log_marg_lik, intermediate_quantities
 
+    @profile
     def log_marg_lik_and_grad(self, hyperparameters, x, y):
 
         self.kernel.set_flat_hyperparameters(hyperparameters)
