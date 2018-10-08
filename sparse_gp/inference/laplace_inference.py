@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.sparse as sps
-from scipy.optimize import fmin_cg, minimize
+from scipy.optimize import minimize
 from sksparse.cholmod import cholesky
 from sparse_gp.inference.inference import Inference
 
@@ -8,7 +8,7 @@ from sparse_gp.inference.inference import Inference
 class LaplaceInference(Inference):
 
     def __init__(self, kernel, likelihood, restart_at_same_f=False,
-                 verbose=False):
+                 verbose=False, maxiter_mode_finding=100):
 
         # Currently, support only diagonal hessians.
         assert(likelihood.hessian_is_diagonal)
@@ -16,12 +16,14 @@ class LaplaceInference(Inference):
         self.f_hat = None
         self.restart_at_same_f = restart_at_same_f
         self.verbose = verbose
+        self.maxiter_mode_finding = maxiter_mode_finding
 
         super(LaplaceInference, self).__init__(
             kernel=kernel, likelihood=likelihood)
 
     @staticmethod
-    def find_mode(K, likelihood, y, f_init=None):
+    def find_mode(K, likelihood, y, f_init=None, maxiter=100,
+                  verbose=False):
 
         if f_init is None:
             f = np.zeros(K.shape[0])
@@ -30,7 +32,9 @@ class LaplaceInference(Inference):
 
         old_f = np.ones_like(f)
 
-        while np.sum((f - old_f)**2) > 1e-8:
+        iters = 0
+
+        while np.sum((f - old_f)**2) > 1e-8 and iters < maxiter:
 
             grad_log_y = likelihood.log_likelihood_grad(y, f)
             W = -likelihood.log_likelihood_hessian(y, f)
@@ -47,6 +51,16 @@ class LaplaceInference(Inference):
             a = b - W_sqrt.dot(second_solve)
             old_f = f
             f = K.dot(a)
+
+            iters += 1
+
+        if iters == maxiter:
+            print('WARNING: Unable to find mode after {} iterations. Returning'
+                  ' despite difference being {}.'.format(
+                      iters, np.sum((f - old_f)**2)))
+
+        if verbose and iters < maxiter:
+            print('Found mode after {} iterations.'.format(iters))
 
         # Calculate the log marginal likelihood
         log_lik = likelihood.log_likelihood(y, f)
@@ -69,7 +83,8 @@ class LaplaceInference(Inference):
         # FIXME: Not a huge fan of having all the intermediate quantities in
         # "s", although it should save computation.
         f, log_marg_lik, s = self.find_mode(kern, self.likelihood, y,
-                                            self.f_hat)
+                                            self.f_hat, verbose=self.verbose,
+                                            maxiter=self.maxiter_mode_finding)
 
         if self.restart_at_same_f:
             # Store this f_hat
@@ -112,12 +127,9 @@ class LaplaceInference(Inference):
 
     def fit(self, x, y):
 
-        # TODO: Profile this. What's slow, what's fast? Can I improve some
-        # stuff?
-
         # Get the kernel hyperparameters (initial values)
         hyperparams = self.kernel.get_flat_hyperparameters()
-        to_minimise = lambda h: [
+        to_minimise = lambda h: [ #NOQA
             -x for x in self.log_marg_lik_and_grad(h, x, y)[0:2]]
         result = minimize(to_minimise, x0=hyperparams, jac=True,
                           method='CG', options={'gtol': 1e-2})
